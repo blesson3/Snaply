@@ -10,7 +10,6 @@ import UIKit
 import Snaply
 
 final class SnapViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
-  
   @IBOutlet private var leftAlignedCollectionView: UICollectionView!
   @IBOutlet private var centerAlignedCollectionView: UICollectionView!
   @IBOutlet private var rightAlignedCollectionView: UICollectionView!
@@ -44,16 +43,19 @@ final class SnapViewController: UIViewController, UICollectionViewDataSource, UI
     centerLayout.itemSize = CGSize(width: size.height * 1.5, height: size.height)
     rightLayout.itemSize = CGSize(width: size.height * 0.8, height: size.height)
     
-    left = Snap(scrollView: leftAlignedCollectionView, edge: .Min, direction: .Horizontal, delegate: self)
-    center = Snap(scrollView: centerAlignedCollectionView, edge: .Mid, direction: .Horizontal, delegate: self)
-    right = Snap(scrollView: rightAlignedCollectionView, edge: .Max, direction: .Horizontal, delegate: self)
+    left = Snap(scrollView: leftAlignedCollectionView, edge: .min, direction: .horizontal, delegate: self)
+    center = Snap(scrollView: centerAlignedCollectionView, edge: .mid, direction: .horizontal, delegate: self)
+    right = Snap(scrollView: rightAlignedCollectionView, edge: .max, direction: .horizontal, delegate: self)
+    left.snapDelegate = self
+    center.snapDelegate = self
+    right.snapDelegate = self
     
     left.setSnapLocations(locations(left, layout: leftLayout), realignImmediately: true)
     center.setSnapLocations(locations(center, layout: centerLayout), realignImmediately: true)
     right.setSnapLocations(locations(right, layout: rightLayout), realignImmediately: true)
   }
   
-  private func locations(snap: Snap, layout: UICollectionViewFlowLayout) -> [CGFloat] {
+  private func locations(_ snap: Snap, layout: UICollectionViewFlowLayout) -> [CGFloat] {
     var locations = [CGFloat]()
     var sizes = [CGFloat]()
     
@@ -62,17 +64,17 @@ final class SnapViewController: UIViewController, UICollectionViewDataSource, UI
       sizes.append(itemSize)
       
       switch snap.snapEdge {
-      case .Min:
+      case .min:
         let offset = layout.headerReferenceSize.width + layout.sectionInset.left
-        let size = sizes.reduce(offset, combine: { $0 + $1 + layout.minimumInteritemSpacing })
+        let size = sizes.reduce(offset, { $0 + $1 + layout.minimumInteritemSpacing })
         locations.append(size - offset)
-      case .Mid:
+      case .mid:
         let offset = (layout.headerReferenceSize.width + layout.sectionInset.left) / 2
-        let size = sizes.reduce(offset, combine: { $0 + $1 + layout.minimumInteritemSpacing })
+        let size = sizes.reduce(offset, { $0 + $1 + layout.minimumInteritemSpacing })
         locations.append(size + offset - itemSize / 2 - layout.minimumInteritemSpacing)
-      case .Max:
+      case .max:
         let offset = layout.footerReferenceSize.width + layout.sectionInset.right
-        let size = sizes.reduce(offset, combine: { $0 + $1 + layout.minimumInteritemSpacing })
+        let size = sizes.reduce(offset, { $0 + $1 + layout.minimumInteritemSpacing })
         locations.append(size - offset + layout.minimumInteritemSpacing)
       }
     }
@@ -80,12 +82,17 @@ final class SnapViewController: UIViewController, UICollectionViewDataSource, UI
     return locations
   }
   
-  func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+  func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
     return 20
   }
   
-  func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
-    return collectionView.dequeueReusableCellWithReuseIdentifier("Cell", forIndexPath: indexPath)
+  func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+    return collectionView.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath as IndexPath)
   }
-  
+}
+
+extension SnapViewController: SnapDelegate {
+    func didSnap(toOffset offset: CGPoint) {
+        print("Did Snap to: \(offset)")
+    }
 }

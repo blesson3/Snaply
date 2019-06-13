@@ -27,6 +27,8 @@ public final class Snap: NSObject, UIScrollViewDelegate {
     public private(set) var snapEdge: SnapEdge
     /// The current snap locations
     private var locations = [CGFloat]()
+    // The SnapDelegate to notify when snapping
+    public var snapDelegate: SnapDelegate?
     
     // MARK: Lifecycle
     
@@ -60,6 +62,9 @@ public final class Snap: NSObject, UIScrollViewDelegate {
     public func scrollToNearestSnapLocationForTargetContentOffset(offset: CGPoint) {
         let contentOffset = contentOffsetForTargetContentOffset(offset: offset)
         scrollView?.setContentOffset(contentOffset, animated: true)
+
+        // notify snap delegate
+        snapDelegate?.didSnap(toOffset: offset)
     }
     
     /**
@@ -78,12 +83,17 @@ public final class Snap: NSObject, UIScrollViewDelegate {
         
         guard dragVelocity > 0 else {
             scrollView.setContentOffset(offset, animated: true)
+            // notify snap delegate
+            snapDelegate?.didSnap(toOffset: offset)
             return
         }
         
         targetContentOffset.pointee = offset
         scrollView.setContentOffset(offset, animated: true) // fixes a flicker bug
         originalDelegate?.scrollViewWillEndDragging?(scrollView, withVelocity: velocity, targetContentOffset: targetContentOffset)
+
+        // notify snap delegate
+        snapDelegate?.didSnap(toOffset: offset)
     }
     
     /**
@@ -185,7 +195,7 @@ public final class Snap: NSObject, UIScrollViewDelegate {
      - parameter locations:          The new locations to apply
      - parameter realignImmediately: If true, the scrollView will automatically re-align to the nearest location based on its current offset.
      */
-    public func setSnapLocations(locations: [CGFloat], realignImmediately: Bool) {
+    public func setSnapLocations(_ locations: [CGFloat], realignImmediately: Bool) {
         let offset = scrollView.contentOffset
         
         // Remove duplicates and sort the resulting values
